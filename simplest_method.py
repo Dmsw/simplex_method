@@ -3,6 +3,14 @@ import numpy as np
 
 class LinearProblem:
     def __init__(self, A, b, c):
+        """
+        used to solve the linear constrain optimize problem.
+        min     c*x
+        s.t.    Ax=b
+        :param A: shape (m, n)
+        :param b: shape (m, 1)
+        :param c: shape (n, 1)
+        """
         self.x = np.zeros_like(c, dtype=float)
         self.A = np.array(A)
         self.x_dim = self.A.shape[1]
@@ -18,8 +26,10 @@ class LinearProblem:
         self.indexes = list(range(self.x_dim+self.b_dim))
         self.base_index = list(range(self.x_dim, self.x_dim+self.b_dim))
         self.artificial_index = set(self.base_index)
+        self.log = [[self.m, self.base_index]]
 
     def solve(self):
+        print("Finding the initial base vector...")
         self.clear_zeta()
         while not self.minimum:
             self.step()
@@ -28,6 +38,7 @@ class LinearProblem:
 
         if self.get_solution_val() > 0:
             self.no_solution = True
+            print("No solution found")
             return None
 
         self.get_init_base_index()
@@ -37,6 +48,7 @@ class LinearProblem:
         while not self.minimum:
             self.step()
             if self.no_solution:
+                print("No minimum solution existed")
                 return None
 
         self.find_solution = True
@@ -73,9 +85,6 @@ class LinearProblem:
         self.m = np.delete(self.m, list(self.artificial_index), axis=1)
         self.indexes = self.indexes[:-len(self.artificial_index)]
 
-    def is_minimum(self):
-        return np.all(self.m[0, :-1] <= 0)
-
     def scale_col_by_row(self, c, r):
         self.m[r, :] /= self.m[r, c]
         for i in range(self.m.shape[0]):
@@ -108,6 +117,7 @@ class LinearProblem:
             self.no_solution = True
 
         self.scale_col_by_row(index_to_be_push, index_to_be_pop+1)
+        self.log.append([self.m, self.base_index])
         self.base_index[index_to_be_pop] = self.indexes[index_to_be_push]
 
     def clear_zeta(self):
@@ -126,6 +136,9 @@ class LinearProblem:
 
     def print_solution(self):
         print(self.get_solution())
+
+    def print_log(self):
+        print(self.log)
 
 
 if __name__ == '__main__':
